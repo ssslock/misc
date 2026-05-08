@@ -1,0 +1,167 @@
+Shh, Claude is "dreaming". After a good sleep, it will evolve crazily and its combat power will skyrocket sixfold overnight.
+新智元
+2026-05-07 04:51
+Claude Developer Conference is here! This time, Anthropic has enabled Agents to "dream", allowing them to automatically ruminate on memories and self-evolve during breaks between tasks. With the cooperation of the multi-Agent corps and the automatic scorer, the completion rate of AI tasks has skyrocketed by 6 times.
+Just now, Anthropic taught AI to dream!
+
+
+
+At the Code with Claude San Francisco Developer Conference, Anthropic really added a feature called Dreaming to the Claude managed agent —
+
+AI can automatically review historical conversations, organize fragmented memories, and discover hidden patterns during the gaps between two work sessions, just like humans entering REM sleep.
+
+Wake up and become a master right away.
+
+
+
+Also released at the same time were Outcomes (automatic scoring) and multi - agent orchestration.
+
+
+
+01 Let Claude take a nap and become stronger on its own when it wakes up
+Anyone who has used an AI Agent knows a pain point. When an Agent is working, it writes things into the memory bank, but these records are scattered and incremental.
+
+After dozens of conversations, the memory bank is in a mess, with duplicate entries, outdated information, and contradictory content piled up together.
+
+The Agent itself is not aware of this problem because they only see the local perspective of the current conversation each time.
+
+And Dreaming is here to solve this problem.
+
+
+
+It is an asynchronous task that runs at regular intervals. It will simultaneously read the Agent's existing memory bank and the complete text records of up to 100 past conversations, and then generate a brand - new, reorganized memory bank.
+
+Specifically, it does three things: (1) Merge duplicate items; (2) Replace outdated or contradictory entries with the latest values; (3) Mine macro - patterns from historical conversations that the Agent itself didn't notice.
+
+People familiar with neuroscience will immediately realize that this is what the human brain does during REM sleep.
+
+During the day, the brain absorbs raw information and stores it as short - term memory. At night, during the REM stage, it replays the day's experiences, strengthens valuable connections, discards useless information, and integrates it into long - term memory.
+
+The engineers at Anthropic obviously also thought of this corresponding relationship, so they directly named the function Dreaming.
+
+In 1968, Philip K. Dick asked the question, "Do Androids Dream of Electric Sheep?" 58 years later, Anthropic gave an engineering - level answer.
+
+
+
+It's worth noting that there is also a key design here.
+
+Dreaming will never modify the original input memory bank. It generates a brand - new output memory bank. Developers can review the results first and discard them directly if they are not satisfied.
+
+That is to say, you have full control over the AI's "dreams". You can choose to let it take effect automatically or make a decision after manual review.
+
+
+
+Live - stream the whole process of AI dreaming
+Specifically, after the Dream task enters the running state, it will expose a session_id. Developers can subscribe to the event stream of this conversation in a streaming manner and see in real - time which memory the AI is reading and what new entries it is writing. If a problem is found, they can "wake up" (cancel) it at any time.
+
+In other words, you are lying next to the AI, watching it dream.
+
+After the task is completed, the underlying conversation will be archived and retained, and you can review the complete "dream record" later.
+
+More importantly, developers can tell the AI "what to dream" through the instructions field.
+
+Since the input memory bank will not be modified, in theory, you can run Dreaming on the same set of memories multiple times, focusing on different themes each time and producing sorting results in different dimensions.
+
+02 After the Agent submits its work, there is a grader waiting
+Just being able to dream is not enough. Who will ensure the quality of the work?
+
+This is the role of Outcomes.
+
+
+
+Developers can write a set of scoring criteria to describe "what counts as successful delivery". Then the system will assign an independent evaluator to score the Agent's output in its own context window.
+
+Since the evaluator is completely isolated from the working Agent, it will not be misled by the Agent's own reasoning process.
+
+As long as it finds a problem, it will accurately point out the areas that need to be modified and let the Agent refine and run another round.
+
+At this time, developers can also set the maximum number of iterations to control costs.
+
+According to Anthropic's internal tests, compared with the standard prompt cycle, Outcomes increases the task success rate by up to 10 percentage points. The more difficult the problem, the more obvious the improvement.
+
+In the document generation scenario, the effect is more intuitive. The success rate of docx document tasks increases by 8.4%, and that of pptx slides increases by 10.1%.
+
+This function is also effective for subjective quality evaluation.
+
+For example, whether the tone of the copywriting conforms to the brand's tone, and whether the design draft follows the visual specifications. These tasks that previously had to be monitored by humans can now be refined by the Agent itself against the standards.
+
+03 If one Agent can't handle it, then form a team
+The third set of features is multi - agent orchestration.
+
+The logic is very simple. When a task is too large or too complex for a single Agent to handle, a lead agent splits the total task into multiple small pieces and assigns them to expert sub - agents equipped with different models, different prompts, and different tools.
+
+
+
+These sub - agents work in parallel based on the same shared file system, and their respective results are aggregated into the global context of the lead agent.
+
+The lead agent can align the progress with other agents at any time during the workflow.
+
+During the process, developers can also trace every detail in the Claude console. What each Agent did, the sequence, and the reasons for the decisions are all visible.
+
+
+
+04 Two of the six landing points failed, but a nap fixed them all
+At the conference, Anthropic strung together the three functions in a lunar mining drone landing mission.
+
+Step 1: Form a team.
+
+The Commander, as the lead Agent, coordinates the overall situation. There are two expert Agents under it: the Detector is responsible for geological exploration to determine whether a mining site is worth exploiting; the Navigator is responsible for navigation to determine where the terrain allows for a safe landing.
+
+
+
+Step 2: Set the standards.
+
+The Outcomes scoring standard is an ordinary Markdown file. A few lines of text clarify the passing conditions: soft landing speed ≤ 2.0 m/s, no boulders or craters on the ground, and remaining fuel ≥ 5%.
+
+
+
+Step 3: Run the simulation.
+
+The real - time status of six landing points is displayed on the big screen at the same time.
+
+As a result, 4 showed green LANDED, but Site 3 crashed directly at a speed of 398 m/s (red CRASH), and Site 4 also did not meet the standards. The overall safety score was 67%.
+
+
+
+Obviously, this result is unqualified.
+
+So, she opened the Dreams page on the Claude console, selected the Opus 4.7 model, and clicked "Start dreaming" to let Dreaming run overnight.
+
+
+
+Opus 4.7 took 8 minutes to distill a 98 - line "Lumara Descent Commander's Playbook" from 5.3 million tokens of historical conversations, covering dimensions such as danger rules, hovering scan processes, fuel thresholds, and abort corridors. Each rule is marked with the source of the task.
+
+The next morning, she reran the simulation with the upgraded memory bank.
+
+The two previously failed sites were all fixed, and the four previously successful sites did not regress.
+
+The whole process only involved pressing a few buttons on the console.
+
+
+
+05 Harvey's task completion rate increased by 6 times, thanks to these three features
+Since the public beta of the managed agent platform in April, the core selling point has always been "Don't build your own Agent infrastructure. Let me host it for you."
+
+But just hosting the operating environment is not enough. For an Agent to be truly useful, three problems must be solved —
+
+1. Memory decay across conversations
+
+2. Unstable output quality
+
+3. Complex tasks that a single Agent can't handle
+
+This time, Dreaming solves the first problem, Outcomes solves the second, and multi - Agent orchestration solves the third. With these three features combined, the Agent is pushed from "able to run" to "usable".
+
+Early customers have been validating this combination. After the legal AI company Harvey used Dreaming, its task completion rate soared by about 6 times.
+
+Currently, Dreaming is launched as a research preview version, supporting Claude Opus 4.7 and Claude Sonnet 4.6, and permission needs to be applied for. Outcomes and multi - Agent orchestration have entered the public beta.
+
+In terms of fees, in addition to the standard API token rate, the managed agent charges an additional runtime fee of $0.08 per session hour. Some developers have calculated that for 24 Agents running 8 hours a day, the runtime cost alone is $15.36 per day, not including tokens.
+
+06 One More Thing
+Computing power freedom
+There was also a significant piece of news on the same day.
+
+Anthropic officially announced an agreement with SpaceX, renting all the computing power of Musk's Colossus 1 data center, a total of 220,000 GPUs.
+
+Running
