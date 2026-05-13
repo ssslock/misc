@@ -1,0 +1,196 @@
+ SkillOS: Learning Skill Curation for Self-Evolving Agents
+Siru Ouyang Jun Yan Yanfei Chen Google Cloud AI Research Rujun Han Google Cloud AI Research Zifeng Wang Google Cloud AI Research Bhavana Dalvi Mishra Google Cloud AI Research Rui Meng Google Cloud AI Research Chun-Liang Li Google Cloud AI Research Yizhu Jiao University of Illinois Urbana-Champaign Kaiwen Zha Massachusetts Institute of Technology Maohao Shen Massachusetts Institute of Technology Vishy Tirumalashetty Google Cloud AI Research George Lee Google Cloud AI Research Jiawei Han University of Illinois Urbana-Champaign Tomas Pfister Google Cloud AI Research Chen-Yu Lee
+Abstract
+
+LLM-based agents are increasingly deployed to handle streaming tasks, yet they often remain one-off problem solvers that fail to learn from past interactions. Reusable skills distilled from experience provide a natural substrate for self-evolution, where high-quality skill curation serves as the key bottleneck. Existing approaches either rely on manual skill curation, prescribe heuristic skill operations, or train for short-horizon skill adaptation, but still struggle to learn complex long-term curation policies from indirect and delayed feedback. We propose SkillOS, an experience-driven RL training recipe for learning skill curation in self-evolving agents. SkillOS pairs a frozen agent executor that retrieves and applies skills with a trainable skill curator that updates an external SkillRepo from accumulated experience. To provide learning signals for curation, we train on grouped task streams based on skill-relevant task dependencies, where earlier trajectories update the SkillRepo, and later related tasks evaluate these updates. We further design composite rewards to better attribute downstream executor feedback to curation decisions. Across multi-turn agentic tasks and single-turn reasoning tasks, SkillOS consistently outperforms memory-free and strong memory-based baselines in both effectiveness and efficiency, with the learned skill curator generalizing across different executor backbones and task domains. Further analyses show that the learned curator produces more targeted skill use, while the evolving SkillRepo develops richer internal structure and higher-level meta-skills over time.
+1 Introduction
+
+LLM-based agents (DBLP:journals/fcsc/WangMFZYZCTCLZWW24) are increasingly deployed in real-world scenarios, where they must move beyond instantaneous problem-solving toward long-term proficiency (he2026memoryarena). However, the prevailing paradigm of “one-off” task execution limits their utility in streaming settings, where tasks unfold sequentially over time. This makes self-evolution (fang2025comprehensive; gao2025survey) essential: capable agents should not repeatedly start from scratch, but instead continually accumulate, refine, and reuse experience for future tasks.
+
+A key substrate for self-evolution is procedural memory (hu2025memory; wu2025human; DBLP:journals/corr/abs-2508-06433), specifically, reusable skills (anthropic_skills_2025; wang2025inducing) accumulated from past interactions. In real-world streaming settings (wu2024streambench), a skill-based self-evolving agent typically follows a closed-loop workflow: for each new task, it selects relevant skills, uses them to guide execution, and updates its skill collection based on the resulting trajectory. This makes skill curation—the extraction of high-quality lessons and their integration into the skill collection—essential for self-evolving agents.
+
+However, existing skill curation works remain limited. Manually curated skills, such as Anthropic’s skills repository (anthropic_skills_2025), demand huge human expertise and cannot scale to the diversity of tasks that agents may encounter. Prompting or heuristic-based methods that dictate memory operations (xu2025amem; qiu2025alita; DBLP:journals/corr/abs-2504-07079) rely on fixed rules and lack downstream performance feedback, preventing them from adapting to the executor’s actual needs. Recent studies explored reinforcement learning (RL) to optimize skill-based agent systems. However, they either focus on teaching agents to use skills (xia2026skillrl; tu2026dynamic) or optimize skill operations within a short task stream (DBLP:journals/corr/abs-2512-17102; DBLP:journals/corr/abs-2602-10652). This limits the density of learning signals available for curating highly reusable skills and mastering complex management operations such as skill update and deletion, which are essential for robust and scalable long-term self-evolution.
+Refer to caption
+Figure 1: SkillOS pairs a frozen Agent Executor with a trainable Skill Curator. The executor retrieves relevant skills from SkillRepo to act; the curator edits the repo (insert/update/delete) based on the resulting experiences, with Markdown as the skill format.
+
+To tackle this challenge, we propose SkillOS, an experience-driven RL training recipe to learn the capability of skill curation for self-evolving agents. We study skill curation in a modular multi-agent framework in a streaming setting, where a frozen agent executor solves tasks with a skill collection (termed SkillRepo), while a trainable skill curator updates and manages this collection through function calls (Figure 1(a)). We represent skills as Markdown files (anthropic_skills_2025) (Figure 1(b)) managed via file I/O operations similar to an operating system (OS). Our recipe features two core designs. First, we construct each training instance as a group of related tasks. By mimicking test-time streaming settings, it grounds skill curation in long-term utility: skills induced from earlier experiences are evaluated by their ability to improve later related tasks. Second, we design rewards to better attribute environmental feedback to curation decisions, combining task performance with signals for valid function calls, skill quality, and SkillRepo’s compactness. Together, these designs turn delayed and indirect supervision into learning signals for skill curation.
+
+We evaluate SkillOS on both multi-turn agentic tasks and single-turn reasoning tasks. Experiments show that SkillOS consistently outperforms memory-free and strong memory-based methods in both effectiveness and efficiency, with up to +9.8% relative performance improvement and −6.0% fewer interaction steps compared to the strongest baseline (Table 1). Our trained skill curator generalizes well across executors and tasks, improving performance even with the Gemini-2.5-Pro executor. Notably, our 8B curator also outperforms Gemini-2.5-Pro when used directly as the curator. Beyond performance gains, our analyses further show that the learned skill curator leads to more targeted and effective skill utilization, while the skills in SkillRepo evolve into more richly structured Markdown files that encode higher-level meta-skills over time. Together, we establish SkillOS as a practical, modular, and experience-driven RL training recipe for building self-evolving agents.
+2 Related Work
+
+Memory for Self-Evolving Agents. Learning from past experiences as procedural memory (wu2025human; wei2025evo; shen2026decocted; hu2025memory; huang2026rethinking; zhang2024working) is a central mechanism for developing self-evolving agents (gao2025survey; fang2025comprehensive). The central challenge is to encode interaction histories into reusable and retrievable representations. Case-based representations are the most concrete form in this research line: they store experiences in minimally processed formats, allowing past histories to be replayed directly or reused as in-context exemplars, such as raw trajectories (zheng2023synapse; DBLP:journals/corr/abs-2508-16153; wu2025comemagent) and abstracted query–response pairs (zhao2024expel; islam-etal-2024-mapcoder). Another line of work abstracts experiences into higher-level knowledge that is editable, auditable, and composable, reducing reliance on long trajectory replay and improving both cross-task generalization and efficiency. Such strategy-based memory typically consists of reusable workflows (wang2025agent; DBLP:journals/corr/abs-2507-06229), distilled insights (ouyang2026reasoningbank; huang-etal-2025-r2d2; DBLP:journals/corr/abs-2509-04439), and recurring patterns (yang2024buffer; kim-etal-2025-principles). Recently, skills (wang2025inducing; kuroki2025agent; DBLP:journals/corr/abs-2602-08004; DBLP:journals/corr/abs-2602-12670; DBLP:journals/corr/abs-2602-02474; yang2026autoskillexperiencedrivenlifelonglearning; alzubi2026evoskill; liang2026skillnet) have emerged as a new agent-native form of memory and an orchestrable capability layer, owing to their modularity and ease of customization. Anthropic conceptualizes each skill as a folder containing instructions, scripts, and supporting resources (anthropic_agent_skills_overview), which has become the most widely adopted design in the current community. Our work follows this design philosophy, simplifying the setting for research purposes by representing each skill as a single Markdown file.
+
+Learning Memory and Skill Curation with RL. Training LLM-based agent systems with memory capabilities using RL has become a growing research direction. One research line targets training for long-context management with predefined operations such as compaction (zhou2026mem; yu2026memagent; wang2025mem). Another interesting area focuses more on memory utilization and management by learning additional memory tool-calls (DBLP:journals/corr/abs-2508-19828; DBLP:journals/corr/abs-2508-16629; DBLP:journals/corr/abs-2510-12635) or training policies for different stages, such as memory retrieval (zhang2026memrl). More recently, RL has been applied at various stages of agent skill development. Specifically, SkillRL (xia2026skillrl) and D2Skill (tu2026dynamic) teach smaller models to use skills curated from powerful LLMs in an iterative manner. ARISE (Li2026ARISEAR) trains a shared policy operating both as skill retriever and worker, with heuristics for skill management. Recent studies have begun to train agents for memory or skill curation (DBLP:journals/corr/abs-2512-17102; DBLP:journals/corr/abs-2602-10652), but their supervision is mostly restricted to local adaptation within short task streams. This favors immediately useful operations such as skill insertion, while offering limited signal for complex management operations, such as revising outdated skills and deleting harmful ones. SkillOS instead formulates skill curation as a long-horizon, executor-grounded learning problem. We group related tasks into training instances and combine downstream task outcomes with intermediate rewards, turning delayed and indirect feedback into learning signals for skill curation.
+3 Methodology
+
+In this section, we first formalize the problem setting and introduce the multi-agent modular design of SkillOS. We then detail the RL training recipe designed specifically for training the skill curator.
+3.1 Streaming Skill Curation with Multi-Agent Modular Design
+
+We consider a streaming test-time setting (wu2024streambench), where an LLM-based agent is deployed to solve a sequence of tasks 𝒟={x1,x2,…,xT} that arrive over time. At each time stamp t, the agent must solve the current task xt before observing future tasks, producing an execution trajectory ξt={o1,a1,…,on,an}, where o and a denote observations and actions, respectively. This setting naturally captures the challenge of self-evolving agents, where the system must distill useful experience from the trajectories of past interactions to improve performance on future tasks, and become more capable over time. Figure 1(a) presents an overview of the system.
+
+Skill Repository. We maintain an external skill repository 𝒮t at time stamp t, which consists of Nt reusable skills 𝒮t={st1,st2,…,stNt}. Following the widely adopted SKILL.md format (anthropic_skills_2025), each skill is represented as a single Markdown file with two components as shown in Figure 1(b): (i) YAML frontmatter, which specifies the skill name and a natural-language description of when the skill should be used, and (ii) Markdown instructions, which describe the executable knowledge, workflows, constraints, and reusable heuristics captured by the skill.
+
+Agent Executor. Given a task xt, a frozen agent executor πℒ solves the task conditioning on the current environment observation and relevant skills. Specifically, we retrieve a subset of skills 𝒮~t⊆𝒮t using BM25 (robertson2009probabilistic) for each task xt, and the executor samples actions following a∼πℒ(⋅∣xt,ot,𝒮~t).
+
+Skill Curator. After the executor completes task xt, the skill curator π𝒮 observes the trajectory ξt, the self-judged correctness of the answers/interactions 𝟙ξt, and a retrieved subset of related skills 𝒮~t. It then generates a sequence of structured curation operations ct=(ut1,…,utMt)∼π𝒮(⋅∣ξt,𝟙ξt,𝒮~t), where each operation utm is one of {insert_skill,update_skill,delete_skill}. Each operation is implemented as a function call (detailed signature in Figure 8) that manipulates the skill repository 𝒮t. Applying these operations transforms the repository from 𝒮t to 𝒮t+1 as 𝒮t+1=ApplyOps​(𝒮t,ct). The updated repository is then used by the executor on subsequent tasks, forming a closed loop between task execution and experience-driven skill evolution.
+3.2 Learning Skill Curation with RL
+
+We optimize the skill curator π𝒮 with RL and keep the agent executor πℒ frozen. The main challenge is indirect and delayed feedback for curation decisions, which is only revealed through πℒ’s performance on future relevant tasks. We address this by constructing grouped training instances (§ 3.2.1) and designing a composite reward (§ 3.2.2) that combines future task outcomes with intermediate signals on operation validity, skill quality, and the conciseness of skills. An overview of the training process is shown in Figure 2.
+Refer to caption
+Figure 2: SkillOS training pipeline. Each training step samples a group of related tasks and initializes an empty SkillRepo. π𝒮 is optimized with composite rewards, enabling self-evolution.
+3.2.1 Training Instance Construction
+
+To provide downstream learning signals for skill curation, we construct each training instance as a group of related tasks that are solved sequentially. Within each group, SkillRepo is updated by the curator π𝓈 after each task, allowing skills derived from earlier experiences to be evaluated by whether they help solve related future tasks. This also differs from prior work that focuses on short-horizon transfer (DBLP:journals/corr/abs-2512-17102; DBLP:journals/corr/abs-2602-10652), where our grouped formulation exposes the curator to longer skill-evolution trajectories and provides denser feedback for learning complex curation operations.
+
+Concretely, for each task xi in 𝒟={xi}i=1N, we first annotate each instance with a set of skill-relevant attributes. Formally, for each xi, we use Gemini-2.5-Pro (DBLP:journals/corr/abs-2507-06261) to produce a set of tags:
+	
+Zi={zi1,zi2,…,zi|Zi|},
+	
+
+where each attribute zi captures a salient aspect of the task xi, such as topic and common pitfalls. For example, in mathematical reasoning, attributes may include labels such as “algebra” or “Fourier transformation”. These attributes serve as proxies for task-relatedness and potential skill dependency.
+
+Based on the annotated attributes, we then partition 𝒟 into a collection of M task groups using the similarity of attributes of these data samples:
+	
+𝒟={G1,G2,…,GM},Gm={xm,1,xm,2,…,xm,|Gm|},
+	
+
+where all instances within the same group Gm exhibit non-trivial dependency in terms of required skills. Detailed description of data processing and grouping algorithms can be found in Appendix B.2.
+3.2.2 Training Loop and Policy Optimization
+
+We employ Grouped Reward Policy Optimization (GRPO DBLP:journals/corr/abs-2402-03300) for its training stability and sample efficiency. The training loop shown in Algorithm 1 optimizes the skill curator policy π𝒮 to maximize a composite reward function over the distribution of generated traces. For a task group G=(x1,…,x|G|), the curator produces a sequence of curation decisions c=(c1,…,c|G|) as the executor proceeds through the group. Each training step, the reward combines four signals:
+	
+r=rtask⏟task outcome+λf​rfc⏟function call+λu​rcnt⏟content quality+λc​rcomp⏟compression
+		(1)
+
+Task outcome reward.  The first task uses an empty SkillRepo, before any curator update occurs. We thus define the task outcome reward as the average success over the remaining tasks as rtask=1|G|−1​∑i=2|G|𝟙​(ξi), which provides executor-grounded signal on downstream performance achieved by the evolving SkillRepo from π𝒮.
+
+Function call reward.  The function call reward measures whether the curator produces valid skill operations. For each curation decision ci, let Valid​(ci) be the fraction of generated function calls that are valid and successfully executed. We define the function call reward as rfc=1|G|​∑i=1|G|Valid​(ci).
+Algorithm 1 Training Skill Curator with Task Groups using GRPO
+1:for each training step do
+2:  G=(x1,…,x|G|), 𝒮←∅ ⊳ Sample a task group and initialize SkillRepo
+3:  for task index i=1,…,|G| do
+4:   𝒮~←BM25​(xi,𝒮) ⊳ Retrieve relevant skills
+5:   ξi←RunTask​(𝒮~,πℒ,xi) ⊳ Run inference on frozen executor
+6:   ci∼π𝒮(⋅|ξi,𝒮~) ⊳ Sample a rollout from skill curator
+7:   𝒮←ApplyOps​(𝒮,ci) ⊳ Apply insert/update/delete
+8:  end for
+9:  r←CalculateReward​(ξ,c)
+10:  Update​π𝒮 ⊳ Update skill curator using GRPO
+11:end for
+
+Compression reward.  To discourage verbatim trajectory copying, we reward concise repository updates. Let 𝒮i denote the skill repository after applying ci, and let χi denote the curator input context at position i. We define rcomp=1|G|​∑i=1|G|(1−|𝒮i||χi|), where |𝒮i| and |χi| denote token lengths. This encourages the curator to distill reusable skills rather than store raw trajectories.
+
+Content quality reward.  The content quality reward evaluates whether the curated skills are semantically meaningful and likely to be useful for future tasks. Let Judge​(ci) denote the scalar score assigned by an external judge (Qwen3-32B) ci, we compute the reward as rcnt=1|G|​∑i=1|G|Judge​(ci).
+
+For each task group G, we sample N independent rollouts of the entire curation sequence from π𝒮. Within each rollout, the executor produces trajectory ξi using the skill repository 𝒮i resulting from previous curations c<i till task position i with the same training task group, so different rollouts evolve different repository histories. The GRPO advantage is computed as: An=rn−1N​∑n′=1Nrn′, where rn is the composite reward (Eq. 1) for the n-th rollout. We optimize π𝒮 with a clipped surrogate objective over all curation steps i=1,…,|G|:
+	
+ℒ=𝔼n​[min⁡(ρn​An,clip​(ρn, 1−ϵ, 1+ϵ)​An)]
+		(2)
+
+where ρn=π𝒮​(cn∣χ)/πθo​l​d​(cn∣χ) is the importance ratio. The advantage An is assigned uniformly to all tokens in cn, and we discard the KL term in GRPO to encourage policy exploration.
+4 Experiments
+
+We conduct experiments on both multi-turn agentic tasks and single-turn reasoning tasks, in line with prior work (xia2026skillrl; wei2025evo; DBLP:journals/corr/abs-2602-10652). We additionally show that the trained skill curator transfers across agent executors and task domains, highlighting its flexibility and generalizability.
+Table 1: Experiment results on ALFWorld benchmark. Success rate (SR ↑) and the number of steps (Steps ↓) are reported on 6 subsets with 3 different frozen executors.
+Methods 	Curator 	Pick 	Look 	Clean 	Heat 	Cool 	Pick2 	Avg. SR 	Steps
+π𝒮 	(35) 	(13) 	(27) 	(16) 	(25) 	(24) 	(140)
+Executor πℒ: Qwen3-8B
+No Memory 	None 	78.1 1.6 	46.2 7.7 	33.3 13.4 	37.5 10.8 	29.3 6.1 	47.2 6.4 	47.9 1.2 	21.1
+ReasoningBank 	[Uncaptioned image] Qwen3-8B 	83.8 0.0 	48.7 7.2 	49.4 16.2 	39.6 4.4 	41.3 8.5 	54.2 8.8 	55.7 3.1 	20.1
+MemP 	[Uncaptioned image] Qwen3-8B 	80.0 5.7 	43.6 4.4 	24.7 4.3 	33.3 3.6 	38.7 6.1 	48.6 6.4 	49.7 0.7 	21.0
+SkillOS-base 	[Uncaptioned image] Qwen3-8B 	79.0 8.7 	41.0 4.4 	45.7 4.3 	37.5 9.5 	38.7 4.0 	55.6 2.1 	53.1 2.5 	20.4
+SkillOS-gemini 	[Uncaptioned image] Gemini-2.5-Pro 	77.1 6.0 	53.8 6.1 	37.0 6.4 	37.5 9.5 	36.0 3.2 	50.0 6.7 	50.7 3.6 	20.8
+SkillOS 	[Uncaptioned image] Qwen3-8B 	85.7 3.3 	56.4 7.7 	54.3 8.6 	43.8 9.5 	46.7 2.3 	62.5 6.4 	61.2 4.6 	18.9
+Executor πℒ: Qwen3-32B
+No Memory 	None 	80.0 2.9 	69.2 0.0 	45.6 7.7 	37.5 16.5 	42.7 6.1 	43.1 2.4 	54.5 2.5 	20.3
+ReasoningBank 	[Uncaptioned image] Qwen3-8B 	86.7 3.0 	71.8 5.4 	50.6 6.3 	45.8 13.3 	52.0 8.9 	51.4 5.1 	61.4 2.5 	18.7
+MemP 	[Uncaptioned image] Qwen3-8B 	80.0 2.9 	76.9 0.0 	44.4 7.4 	37.5 10.8 	42.7 2.3 	47.2 6.4 	55.7 3.7 	20.0
+SkillOS-base 	[Uncaptioned image] Qwen3-8B 	82.9 2.9 	69.2 11.8 	48.1 2.1 	50.0 9.7 	48.0 14.4 	52.8 11.0 	59.8 3.0 	19.2
+SkillOS-gemini 	[Uncaptioned image] Gemini-2.5-Pro 	97.1 3.0 	76.9 5.4 	55.6 6.0 	43.8 11.3 	40.0 5.7 	54.2 4.9 	63.6 4.2 	18.1
+SkillOS 	[Uncaptioned image] Qwen3-8B 	91.4 3.3 	76.9 4.4 	59.3 8.6 	56.3 12.5 	57.3 10.1 	62.5 4.2 	68.6 5.7 	17.3
+Executor πℒ: Gemini-2.5-pro
+No Memory 	None 	90.5 3.2 	66.7 5.1 	48.1 10.2 	39.6 17.1 	68 7.4 	68.1 3.8 	66.4 2.0 	17.7
+ReasoningBank 	[Uncaptioned image] Qwen3-8B 	91.4 3.4 	61.5 4.1 	63.0 9.3 	39.6 10.3 	70.7 3.2 	76.4 8.5 	71.4 2.9 	16.0
+MemP 	[Uncaptioned image] Qwen3-8B 	95.2 2.1 	74.4 6.8 	61.7 7.6 	56.3 12.4 	76.0 6.2 	68.1 8.5 	74.3 3.4 	15.2
+SkillOS-base 	[Uncaptioned image] Qwen3-8B 	91.4 1.6 	69.2 7.7 	56.8 5.7 	54.2 13.7 	72.0 4.0 	66.7 11.0 	70.7 3.0 	16.3
+SkillOS-gemini 	[Uncaptioned image] Gemini-2.5-Pro 	94.3 5.7 	69.2 0.0 	77.8 5.7 	75.0 16.5 	80.0 12.2 	66.7 2.4 	79.3 2.6 	14.9
+SkillOS 	[Uncaptioned image] Qwen3-8B 	95.2 2.9 	71.8 7.7 	74.1 13.0 	72.9 10.1 	77.3 6.1 	77.8 10.0 	80.2 3.1 	14.8
+4.1 Setup
+
+We briefly discuss the experiment setup throughout this paper. Full description of datasets, implementations, baselines, and evaluations can be found in Appendix B.
+
+Dataset. For agentic tasks, we conduct experiments on ALFWorld (shridhar2021alfworld) and WebShop (10.5555/3600270.3601778). ALFWorld is a text-based interactive environment aligned with the ALFRED embodied AI benchmark, where agents must complete household tasks through textual navigation and object manipulation. WebShop simulates an online shopping environment in which agents navigate a realistic web interface to identify and purchase products that satisfy user-specified requirements. For each benchmark, we train SkillOS on its training split where Zi is the default task type annotations, and evaluate on the corresponding test set. In addition to agentic tasks, we also benchmark for single-turn reasoning tasks, including AIME24, AIME25, and GPQA-Diamond (rein2024gpqa). Training data are constructed from DeepMath-103k (he2026deepmathk), where we randomly sample a subset of 33,000 data points.
+
+Evaluation Configurations. We evaluate all methods across two dimensions, effectiveness and efficiency. For effectiveness, we measure the success rate (SR) and accuracy for agentic tasks and reasoning tasks, respectively. For efficiency, we compute the number of execution steps per agentic task and the number of tokens per reasoning problem, respectively. We compare SkillOS with three categories of baselines: (i) a memory-free agent (No Memory); (ii) existing memory-based methods, including ReasoningBank (ouyang2026reasoningbank), which distills reusable insights from past experiences, and MemP (DBLP:journals/corr/abs-2508-06433), which induces procedural memory with advanced memory-management strategies; and (iii) internal variants of our framework, including SkillOS-base, which uses the initial skill curator without RL training, and SkillOS-gemini, which uses Gemini-2.5-Pro to directly perform skill curation instead of learning the curator with RL. All prompts used can be found in Appendix A.
+
+Implementation Details. We use Qwen3-8B (DBLP:journals/corr/abs-2505-09388) as the base model for π𝒮. The frozen executor is also instantiated with Qwen3-8B during training. We train our model using GRPO with a learning rate 1×10−6, batch size 32, and group size 8. Training is conducted on 16 H100 GPUs using the verl framework (sheng2024hybridflow). The full training process takes approximately 3 days for ALFWorld, 2.5 days for reasoning tasks, and 5 days for WebShop. For testing, we additionally include Qwen3-32B, Gemini-2.5-Pro (DBLP:journals/corr/abs-2507-06261), and Gemini-3.1-Flash-Lite (Appendix C.1) as executors to evaluate the generalization of SkillOS under different executor scales and architectures. Task outcome signal 𝟙ξt is obtained via LLM-as-a-judge with the frozen agent executor (prompt shown in Appendix A). We use ReAct (DBLP:conf/iclr/YaoZYDSN023) for agent execution and CoT (DBLP:conf/nips/Wei0SBIXCLZ22) for reasoning tasks. For the reward function, we set λf=1.0, λu=0.1, and λc=0.05. We report averaged performance and standard deviation over 3 runs.
+Table 2: Experiment results on WebShop and single-turn reasoning tasks for 3 different frozen executors. For WebShop, the averaged score, success rate (SR ↑), and the number of steps (Steps ↓) are reported. For reasoning tasks, accuracy (Acc. ↑) is reported on three datasets.
+Methods 	Curator 	WebShop 	Reasoning
+π𝒮 	Score 	SR 	Steps 	AIME24 	AIME25 	GPQA 	Avg. Acc
+Executor πℒ: Qwen3-8B
+No Memory 	None 	33.3 0.7 	9.8 0.5 	20.3 	76.0 6.9 	71.1 10.7 	61.8 1.1 	69.6 4.7
+ReasoningBank 	[Uncaptioned image] Qwen3-8B 	35.4 1.1 	11.4 0.9 	20.5 	75.4 5.0 	73.2 10.8 	60.3 3.9 	69.6 2.5
+MemP 	[Uncaptioned image] Qwen3-8B 	35.7 0.9 	12.0 0.5 	21.3 	75.6 5.1 	71.1 5.1 	60.6 4.0 	69.1 4.0
+SkillOS-base 	[Uncaptioned image] Qwen3-8B 	38.6 0.9 	13.6 0.8 	20.1 	75.6 5.1 	71.9 6.9 	59.3 2.5 	68.9 2.6
+SkillOS-gemini 	[Uncaptioned image] Gemini-2.5-pro 	38.1 1.0 	13.2 0.9 	19.6 	73.3 1.3 	71.3 1.9 	57.6 2.8 	67.4 0.8
+SkillOS 	[Uncaptioned image] Qwen3-8B 	40.6 0.7 	16.5 0.7 	19.4 	80.0 3.3 	76.7 5.8 	64.6 1.3 	73.8 1.8
+Executor πℒ: Qwen3-32B
+No Memory 	None 	41.5 0.5 	12.2 0.3 	17.0 	81.4 1.3 	72.2 3.8 	68.4 2.0 	74.0 1.9
+ReasoningBank 	[Uncaptioned image] Qwen3-32B 	40.4 0.8 	11.2 1.1 	17.9 	81.1 9.6 	75.6 5.9 	66.9 1.2 	74.9 2.2
+MemP 	[Uncaptioned image] Qwen3-32B 	30.7 0.7 	10.1 0.6 	17.4 	82.2 5.1 	76.7 0.0 	66.5 2.3 	75.1 2.1
+SkillOS-base 	[Uncaptioned image] Qwen3-8B 	43.4 0.8 	12.3 1.0 	16.8 	80.0 3.3 	75.6 10.2 	67.7 1.5 	74.7 3.3
+SkillOS-gemini 	[Uncaptioned image] Gemini-2.5-pro 	45.2 1.0 	13.2 1.1 	16.6 	77.8 6.7 	74.4 1.9 	66.2 0.6 	73.2 2.6
+SkillOS 	[Uncaptioned image] Qwen3-8B 	49.2 1.2 	16.5 0.6 	15.9 	85.6 1.9 	81.1 3.3 	72.4 3.0 	79.7 1.6
+Executor πℒ: Gemini-2.5-pro
+No Memory 	None 	48.6 0.3 	38.4 0.5 	19.5 	85.6 1.9 	80.0 6.7 	79.9 1.5 	81.8 2.8
+ReasoningBank 	[Uncaptioned image] Gemini-2.5-pro 	50.8 1.5 	40.2 1.3 	19.2 	85.6 5.1 	84.4 6.7 	80.4 2.1 	83.5 2.1
+MemP 	[Uncaptioned image] Gemini-2.5-pro 	51.3 1.2 	39.8 1.0 	19.4 	83.3 6.9 	76.7 5.8 	81.8 3.4 	80.6 3.2
+SkillOS-base 	[Uncaptioned image] Qwen3-8B 	52.8 1.0 	39.6 0.8 	19.0 	87.8 3.3 	83.3 1.9 	82.8 2.7 	84.6 1.8
+SkillOS-gemini 	[Uncaptioned image] Gemini-2.5-pro 	54.7 1.0 	41.0 1.2 	17.8 	90.0 5.1 	85.6 7.7 	80.7 5.5 	85.4 3.5
+SkillOS 	[Uncaptioned image] Qwen3-8B 	56.0 0.7 	41.3 0.8 	18.3 	92.2 2.4 	86.7 3.5 	86.8 2.1 	88.6 1.5
+4.2 Main Results
+
+Tables 1 and 2 summarize the results for different benchmarks with Qwen3-8B as the skill curator on various agent executors. Based on the results, we have the following observations.
+
+SkillOS achieves strong performance gains across benchmarks. Across all three benchmarks, SkillOS consistently outperforms both memory-free and memory-based baselines, showing that the gains come from learning to manage and evolve skills rather than from maintaining a static collection. On ALFWorld, SkillOS improves the average success rate from 55.7 to 61.2 over the strongest baseline ReasoningBank with Qwen3-8B as the executor; similar trends hold on WebShop and reasoning tasks. Strikingly, our RL-trained 8B curator even surpasses SkillOS-gemini, despite the latter using a far stronger frontier model as the curator, demonstrating that targeted training of a small curator can outweigh raw model scale. The benefits brought by RL training are also compounded with executor capacity, yielding +9.5 absolute improvement with Gemini-2.5-Pro versus +7.9 with Qwen3-8B for ALFworld, compared with SkillOS-base.
+
+SkillOS is more efficient, requiring fewer interactions and lower execution cost. The gains of SkillOS are accompanied by better efficiency rather than longer trajectories. On ALFWorld, SkillOS reduces the average interaction steps by 2.2, 3.0, and 3.1 compared with “no memory” setting with 3 executors, consistently outperforming all memory-based baselines. This trend extends to WebShop, where SkillOS secures higher success rates with fewer environment interactions. These results indicate that the learned skill manager enables the executor to identify procedural shortcuts and bypass redundant exploration. Rather than relying on additional trial-and-error, SkillOS improves performance by distilling experience into direct, actionable expertise that simplifies task execution.
+
+The gains differ between agentic and reasoning tasks, reflecting different forms of reusable skills. A notable trend is that the gains of SkillOS are generally larger on multi-turn agentic benchmarks than on single-turn reasoning tasks. We hypothesize that this difference arises from how reusable skills manifest across task types. Agentic tasks naturally expose procedural regularities, such as action ordering, exploration strategies, recovery behaviors, and environment-specific constraints, which can be repeatedly composed and refined across task streams. Reasoning tasks also benefit from skill curation, but their reusable knowledge often appears at a more abstract level, such as decomposition heuristics, constraint formulation, or verification patterns, rather than as directly reusable action procedures. As a result, SkillOS still improves reasoning performance, while the gains are typically smaller than those observed on agentic benchmarks. We provide a case study demonstrating skills curated for different tasks in Figure 17.
+4.3 Generalization of SkillOS
+Refer to caption
+Figure 3: Cross-task generalization results of SkillOS with (a) Qwen3-8B, (b) Qwen3-32B, and (c) Gemini-2.5-Pro as frozen executors. We plot relative improvement with baselines from least to most.
+
+SkillOS is transferable and remains effective for different agent executors. During training, we use Qwen3-8B as the executor. To test whether SkillOS brings improvement for executors that are not seen in training, we pair the trained skill curator with different executors. As shown in Table 1 and 2, SkillOS consistently improves a wide range of frozen executors across benchmarks, from open-source models (Qwen3-8B, Qwen3-32B) to frontier models (Gemini-2.5-Pro). On ALFWorld, it lifts the average success rate of Qwen3-8B from 47.9 to 61.2 and Gemini-2.5-Pro from 66.4 to 80.2, demonstrating compatibility with executors of varying capacity. Notably, using Gemini-2.5-Pro directly as the curator (SkillOS-gemini) underperforms our trained curator, especially when paired with the smaller Qwen3-8B executor. This highlights a curator-executor mismatch: stronger reasoning ability alone does not guarantee effective skill curation, as frontier-generated skills may be misaligned with the executor’s capacity or usage patterns. By contrast, SkillOS learns executor-grounded curation behaviors through RL, producing skills that better match the downstream agent.
+
+SkillOS delivers consistent performance improvement when generalized to different task domains. Figure 3 shows that the skill curator learned by SkillOS transfers well across different tasks. While training and testing on the same task often gives the strongest gain, most off-diagonal entries still bring performance improvement over baselines, indicating that SkillOS captures reusable skills beyond task-specific heuristics. Specifically, skill curator πs learned from reasoning tasks transfer particularly well to the two agentic tasks, likely because they contain more abstract and high-level strategies, such as decomposition, verification, and adaptive planning, which are broadly useful across settings. In contrast, skills learned from WebShop or ALFWorld are more tied to environment-specific knowledge, making them less transferable across tasks.
+5 Analysis
+
+Beyond performance, we analyze why SkillOS works, focusing on design choices, evolution of curator’s behaviors and contents in SkillRepo, and the role of curated skills in task success. Additional analyses are included in Appendix C.
+Table 3: Ablation results of reward design on the ALFWorld dataset.
+Methods 	Avg. SR 	Steps
+SkillOS-GRPO 	61.2 	18.9
+w/o rc​n​t 	58.6 	20.1
+w/o rc​o​m​p 	60.0 	19.3
+w/o grouping 	57.3 	20.6
+Ablation Studies.
+
+We ablate two components of SkillOS: (i) auxiliary rewards in Eq. 1, and (ii) grouped task streams in § 3.2.1. Experiments are conducted on ALFWorld, with Qwen3-8B used as both the curator and executor. As shown in Table 3, removing either reward component hurts performance. Without the content-quality reward, the success rate drops from 61.2 to 58.6, showing the importance of intermediate supervision for guiding skill updates in a pipelined system. Removing the compression reward causes a smaller but consistent drop, suggesting that concise repositories are easier for the executor to use. The most significant degradation comes from using random task sequences (w/o grouping), which lowers the success rate to 57.3. This highlights the importance of training on grouped task streams, in which curation decisions are learned from their downstream impact on related future tasks.
+Refer to caption
+Figure 4: Behaviors of the skill curator w.r.t. skill operations during training.
+
+Behaviors of Skill Curator. To better understand how the behavior of the skill curator evolves during training, we analyze the distribution of its three skill operations from rollouts at different training steps: insert_skill, update_skill, and delete_skill. Figure 4 plots the proportion of each operation. At the beginning of training, insert overwhelmingly dominates, indicating that the model is primarily focused on populating the skill repository with new knowledge distilled from experience. As training progresses, however, update becomes increasingly frequent, while insert steadily declines. This suggests that the skill curator gradually moves from plain expansion of skills to refining existing skills. Meanwhile, delete remains a relatively small fraction throughout training with a slightly growing trend, showing the effectiveness of rewarding conciseness of SkillRepo. Instead, the dominant form of adaptation is to revise and consolidate previously acquired skills.
+Refer to caption
+Figure 5: Evolution dynamics of the curated skills under RL training.
+
+Skill Evolution Dynamics. Beyond aggregate performance, we examine how the skill repository evolves during RL training. We focus on two emergent phenomena: (i) new Markdown sections within individual skills, and (ii) higher-level meta-skills that capture reusable principles across tasks. Figure 5(a) shows that early in training, the curator tends to introduce generic sections such as additional guidance, tips, or recommendations, which often make skills more verbose without substantially improving their operational value. As training progresses, these additions shift toward more actionable structures, such as failure-handling logic and conditional branches that specify when to deviate from the default workflow. This suggests that RL gradually steers the curator from superficial enrichment toward execution-oriented skill refinement. Figure 5(b) further shows that evolution occurs not only within individual skills, but also in the global organization of the repository. Early repositories are dominated by narrow, task-specific skills, whereas later repositories contain a more diverse set of meta-strategy skills covering verification, fallback planning, system search, and strategy adjustment. This indicates that the learned curator does not merely accumulate skills, but progressively expands the repository’s strategic space, shifting it from isolated task-local procedures toward more compositional cross-task control knowledge.
+Refer to caption
+Figure 6: Comparison of skill utilization statistics on ALFWorld.
+
+Attribution of Skill Usage. To better understand whether the gains of SkillOS come from the evolved skills, we analyze how skills are used during evaluation. We consider 4 complementary metrics: (i) skill usage rate, the fraction of examples where the agent invokes at least one skill; (ii) successful skill usage rate, the success rate among examples that use skills; (iii) skill coverage, the fraction of the skill collection that are actually used; and (iv) the average number of skills used per example, which measures the degree of skill reliance. Figure 6 reports results on ALFWorld. Compared with the baseline, SkillOS invokes skills on all evaluation examples and achieves a higher success rate, indicating that the evolved skills contribute directly to task solving. Also, a larger fraction of the skill curated by SkillOS is used, showing that RL training improves the overall utility of the curated SkillRepo. Meanwhile, SkillOS uses fewer skills per example, suggesting that gains come from more precise skill selection rather than more skill context.
+6 Conclusion
+
+We presented SkillOS, an RL training recipe for learning skill curation in self-evolving agents. By decoupling the skill curator from the agent executor, SkillOS enables modular skill curation without retraining the underlying executor. Through grouped task streams and executor-grounded rewards, SkillOS optimizes curation decisions by their downstream impact on future tasks. Across diverse benchmarks and LLM backbones, SkillOS consistently improves both performance and efficiency. Further analyses show that trained skill curation can outperform frontier models’ zero-shot curation ability and generalize across settings, highlighting modular, trained skill curation as a practical path toward agents that self-evolve from experience.
+7 Acknowledgments
+
+We thank Zilin Xiao, I-Hung Hsu, Zexue He, and members from Google Cloud AI Research for their valuable feedback during the preparation of the paper. Siru was supported by the Molecule Maker Lab Institute: An AI Research Institutes program supported by NSF under Award No. 2019897.
