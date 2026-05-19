@@ -1,0 +1,79 @@
+ AI for nuclear energy: Powering an intelligent, resilient future
+By Darryl Willis, Corporate Vice President, Worldwide Energy and Resources Industry
+Share
+
+Categories
+
+    Energy and resources
+    Power and utilities
+
+Tags
+
+    AI
+
+The world is racing to meet a historic surge in power demand with an infrastructure pipeline built for the analog age. Driven by the exponential expansion of digital technologies and the reindustrialization of supply chains, the mandate for always-on, carbon-free power is urgent and absolute. Nuclear energy is the essential backbone for this future, but the industry remains trapped in a delivery bottleneck. Before a shovel even hits the dirt, critical projects are slowed by highly customized engineering, fragmented data, and mountains of manual regulatory review.
+Drive innovation to power a secure and sustainable future
+
+That is where AI comes in. To break the infrastructure bottleneck and shift the industry from ambition to delivery, Microsoft is announcing an AI for nuclear collaboration with NVIDIA, to provide end-to-end tools that streamline permitting, accelerate design, and optimize operations across the industry.
+
+This set of technologies brings disciplined engineering to the entire lifecycle of a nuclear plant—spanning site permitting, design, construction, and continuous operations. By enabling these capabilities within a connected, AI-powered foundation, we are empowering energy developers to make highly complex work repeatable, traceable, secure, and predictable—slashing development timelines and eliminating rework without sacrificing safety.
+Paused
+The digital foundation for nuclear at scale
+
+The only thing that may be more complex than building a nuclear plant is designing and permitting one. Permitting alone can take years, cost hundreds of millions of dollars, and involve an immense amount of data processing and reporting. It’s not a lack of need, knowledge, or even willingness that’s holding development back, but rather the inability to progress efficiently and consistently through rigorous permitting and development processes.
+
+Engineers can spend thousands of hours drafting, cross-referencing, formatting, searching, reviewing, and reworking materials. They have to identify and fix inconsistencies across tens of thousands of pages. It is little wonder that plants have been notorious for construction delays and cost overruns.
+
+To break this infrastructure bottleneck, we need to move away from highly customized engineering towards repeatable, reference-based delivery—while maintaining regulatory standards and engineering accountability.
+
+With AI, we can identify tiny documentation inconsistencies and resolve them quickly. By unifying data and simulation across the lifecycle, we ensure complex work remains:
+
+    Traceable: Every engineering decision is digitally linked to the evidence and regulations that back it up.
+    Audit-Ready: The system keeps a perfect “paper trail,” ensuring that regulators can verify safety instantly.
+    Secure: High-level intelligence is applied within a governed, protected environment.
+    Predictable: High-fidelity simulations map time and cost, catching delays before they happen in the real world.
+
+This isn’t just about speed; it’s about trust. Engineers and regulators are freed to focus on what matters most: building a safe, secure, high-capacity, carbon-free power source that’s on-time and on-budget.
+
+Here is how AI and Digital Twins can carry a project from the initial phases to efficient operations:
+
+    Design and engineering: Digital Twins and high-fidelity simulations enable faster iteration. Engineers can reuse proven patterns and instantly see how a tiny design change impacts the entire model, creating a validated plan before breaking ground.
+    Licensing and permitting: Generative AI handles the heavy lifting of document drafting and gap analysis. It unifies all project information, ensuring comprehensive applications aligned with historical permits. This allows expert regulators to focus their time on safety judgments rather than reconciling thousands of pages of text.
+    Construction and delivery: While traditional 3D models only map physical space, 4D (time scheduling) and 5D (cost tracking) simulations can virtually construct the plant before shovels hit the dirt. AI and Digital Twins allow developers to track physical progress against the digital plan in real-time, catching potential delays and preventing the schedule collisions that lead to expensive rework.
+    Operations and maintenance: AI-powered sensors and operational digital twins detect anomalies early, ensuring higher uptime and predictive maintenance that keeps the grid stable with human operators firmly in control.
+
+By unifying data, traceability, and simulation across phases, AI accelerates design validation with high-fidelity 3D models and Digital Twins, improves licensing consistency through AI-assisted document workflows, and connects design assumptions to operational performance—giving operators, regulators, and stakeholders clearer, continuous visibility.
+Accelerating delivery: How Aalo Atomics, Idaho National Labs, and Southern Nuclear are deploying AI for nuclear
+
+The proof is in the progress. Our collaboration is already changing the pace of nuclear delivery.
+Aalo Atomics
+
+Aalo Atomics has reduced the time-intensive permitting process by 92% using the Microsoft Generative AI for Permitting solution, saving an estimated $80 million a year. For Aalo, the value of the Microsoft and NVIDIA collaboration isn’t just speed—it’s confidence.
+
+    “Two things matter most: enterprise-scale complexity and mission-critical reliability. We’re deploying something complex at a scale only a company like Microsoft really understands. There’s no room for anything less than proven reliability.”
+
+    —Yasir Arafat, Chief Technology Officer, Aalo Atomics
+
+Paused
+Southern Nuclear
+
+Southern Nuclear has developed and deployed agents using Microsoft Copilot across its fleet, including engineering and licensing, to improve consistency, reuse knowledge faster, and support better decision-making in key workstreams.
+Idaho National Laboratory
+
+When it comes to the public sector and specifically United States Federal, Idaho National Laboratory (INL) has become an early adopter of AI for nuclear technology. By using the AI capabilities to automate the assembly of complex engineering and safety analysis reports, INL is streamlining the review process and creating standard methodologies for regulators to adopt these tools safely, further speeding deployment.
+Expanding the ecosystem: How Everstar and Atomic Canyon are operationalizing AI for nuclear on Microsoft Azure
+
+Microsoft is actively expanding this secure ecosystem. Everstar—an NVIDIA Inception startup—brings domain-specific AI for nuclear to Azure to modernize how the industry manages project workflows and governed data pipelines.
+
+    “The nuclear industry has been bottlenecked by documentation burden and regulatory complexity for decades. This partnership means our customers get the secure, scalable cloud deployments they demand. It’s a significant step toward making nuclear power fast, safe, and unstoppable.”
+
+    —Kevin Kong, Chief Executive Officer, Everstar
+
+We are also excited to highlight Atomic Canyon, whose Neutron platform is now available in the Microsoft Marketplace, allowing nuclear developers to deploy these capabilities with consistency and control through trusted procurement pathways.
+Progress at the pace this moment requires
+
+AI is enabling the energy industry to deliver more power, faster, and safely. This Microsoft and NVIDIA collaboration provides the path to do exactly that for advanced developers, owners, and operators. By turning fragmented, high-variance workflows into governed, auditable systems, we can compress timelines without compromising rigor. By unifying data, simulation, and evidence across design, permitting, construction, and operations, we are accelerating the deployment of firm, carbon-free power while strengthening regulatory confidence and operational resilience.
+
+The AI for nuclear operations collaboration brings together NVIDIA Omniverse, NVIDIA Earth 2, NVIDIA CUDA-X, NVIDIA AI Enterprise, PhysicsNeMo, Isaac Sim, and Metropolis with Microsoft Generative AI for Permitting Solution Accelerator and Microsoft Planetary Computer to create a comprehensive, AI-powered digital ecosystem for nuclear energy on Azure.
+
+Microsoft, NVIDIA, and Aalo Atomics will be presenting this AI-lead industry perspective at CERAWeek 2026 in a session entitled “A Digital Age for Nuclear: Aalo Atomics, NVIDIA, and Microsoft.”
