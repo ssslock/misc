@@ -1,0 +1,41 @@
+
+GitHub admits major source code leak after 3,800 internal repositories breached
+news
+May 20, 20264 mins
+
+GitHub blamed the latest in a growing list of hacks claimed by TeamPCP on a poisoned VS Code extension.
+
+GitHub mobile icon app on a screen smartphone and notebook closeup. GitHub is the largest web service for hosting and developing IT projects. Batumi, Georgia - November 4, 2023
+Credit: Primakov / Shutterstock
+
+Microsoft’s GitHub has suffered what appears to be its biggest ever security breach after confirming that attackers exfiltrated code from around 3,800 of the company’s internal repositories.
+
+News of the incident first emerged on May 19, when GitHub said it was investigating “unauthorized access.” Hours later, the company’s X account confirmed the worst:
+
+“Yesterday we detected and contained a compromise of an employee device involving a poisoned VS [Visual Studio] Code extension. We removed the malicious extension version, isolated the endpoint, and began incident response immediately,” GitHub said.
+
+“Our current assessment is that the activity involved exfiltration of GitHub-internal repositories only. The attacker’s current claims of ~3,800 repositories are directionally consistent with our investigation so far.”
+
+GitHub added: “We continue to analyze logs, validate secret rotation, and monitor for any follow-on activity. We will take additional action as the investigation warrants.” The company promised to publish a full incident report once it had completed its investigations.
+
+That figure tallied with an earlier claim by the TeamPCP threat group that it had breached 4,000 repos, complete with a threat to leak the stolen code if no buyer willing to pay at least “50k” was found. The group backed up its claim by posting a list of the breached repositories on the LimeWire content sharing platform.
+
+“As always this is not a ransom, we do not care about extorting Github, 1 buyer and we shred the data on our end, it looks like our retirement is soon so if no buyer is found we will leak it free,” the group said.
+
+GitHub hasn’t named the poisoned VS Code extension that led to the compromise, but security company Akido Security speculated that there might be a connection to a separate TeamPCP attack, also on May 19, that led to the backdooring of the popular Nx Console VS Code extension.
+
+“The malicious version collected credentials silently from the moment a developer opened any workspace. The community, including Aikido Intel, caught it quickly, with the version pulled within 11 minutes,” wrote Akido’s technical product marketer Shaun Brown.
+
+Nx Console’s advisory put the exposure window for the compromised version 18.95.0 at 18 minutes, advising developers to update to version 18.100.0. According to the maintainers’ internal analytics, thousands of developers were caught out by the infected version. File paths targeted by attackers to steal credentials included Kubernetes, npm, AWS, 1Password, private keys, and GitHub.
+
+The same May 19 campaign led to a major supply chain compromise of the node package manager (npm) open-source registry which resulted in attackers publishing 637 malicious versions across the namespace of the AntV enterprise data visualization tool in a 22-minute burst.
+
+That came after a May 11 attack targeting the TanStack Router package ecosystem was able to spew 170 malware-infected versions before it was halted.
+
+“These are not sketchy packages and extensions from unknown publishers. They are tools developers use without thinking twice, precisely because it has the install count, the verified publisher badge, and the marketplace legitimacy that signal safety,” said Brown.
+
+“High install count means high-value compromise. A verified publisher means developers don’t hesitate. Official marketplace means no one thinks to check.”
+
+The TeamPCP modus operandi is simple: exploit platform updating weaknesses or stolen credentials to execute short, sharp worm attacks that burrow as far as possible into enterprises using open-source software before defenders can react.
+
+As the number of incidents starts to grow — including a March TeamPCP attack on the Trivy vulnerability scanner, and a separate attack on the Axios npm JavaScript HTTP client library — the evidence is that the strategy of targeting open source developer tools is rapidly turning into the next big security headache.
